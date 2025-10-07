@@ -125,32 +125,102 @@
 package main
 
 import (
-	"runtime"
+	"fmt"
+	"image/color"
+	"math/rand"
+	"strconv"
+	"time"
 
-	"goecbtest/internal/gpio"
-	"goecbtest/internal/services"
-	"goecbtest/internal/view"
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/canvas"
+	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/widget"
 )
 
 func main() {
-	breaker := services.NewBreaker(nil, nil)
+	a := app.New()
+	w := a.NewWindow("Mock GPIO Monitor + Log + Graph")
+	w.Resize(fyne.NewSize(700, 500))
 
-	var sensorPin gpio.Pin
-	var relayPin gpio.Pin
+	// ============ LOG AREA ============
+	logList := widget.NewList(
+		func() int { return len(logs) },
+		func() fyne.CanvasObject {
+			return widget.NewLabel("")
+		},
+		func(i widget.ListItemID, o fyne.CanvasObject) {
+			o.(*widget.Label).SetText(logs[i])
+		},
+	)
+	logList.Resize(fyne.NewSize(700, 200))
 
-	if runtime.GOOS == "windows" {
-		sensorPin = gpio.NewMockPin("SENSOR", breaker.Logs)
-		relayPin = gpio.NewMockPin("RELAY", breaker.Logs)
-	} 
-	// else {
-	// 	sensorPin = gpio.NewRealPin("GPIO17")
-	// 	relayPin = gpio.NewRealPin("GPIO27")
-	// }
+	// Fungsi untuk menambahkan log di atas
+	addLog := func(msg string) {
+		logs = append([]string{fmt.Sprintf("[%s] %s", time.Now().Format("15:04:05"), msg)}, logs...)
+		logList.Refresh()
+	}
 
-	breaker.Sensor = sensorPin
-	breaker.Relay = relayPin
+	// ============ MOCK AKTIVITAS ============
+	btnMouse := widget.NewButton("Simulasi Klik Mouse", func() {
+		addLog("Mouse clicked!")
+	})
+	btnKeyboard := widget.NewButton("Simulasi Tekan Keyboard", func() {
+		key := string(rune('A' + rand.Intn(26)))
+		addLog("Keyboard pressed: " + key)
+	})
 
-	go breaker.Monitor()
+	// ============ RANDOM DATA + GRAFIK ============
+	points := make([]float64, 0, 30)
+	line := canvas.NewLine(color.NRGBA{R: 100, G: 180, B: 255, A: 255})
+	line.StrokeWidth = 3
+	graphCanvas := canvas.NewRasterWithPixels(func(x, y, w, h int) color.Color {
+		return color.NRGBA{R: 240, G: 240, B: 240, A: 255}
+	})
 
-	view.StartUI(breaker)
+	graphContainer := container.NewMax(graphCanvas, line)
+	graphContainer.SetMinSize(fyne.NewSize(700, 200))
+
+	go func() {
+		for {
+			val := float64(rand.Intn(100))
+			points = append(points, val)
+			if len(points) > 30 {
+				points = points[1:]
+			}
+			addLog("Random value: " + strconv.Itoa(int(val)))
+
+			// Update grafik
+			graphCanvas = canvas.NewRaster(func(x, y, w, h int) color.Color {
+				index := int(float64(x) / float64(w) * float64(len(points)))
+				if index >= len(points) {
+					return color.NRGBA{R: 255, G: 255, B: 255, A: 255}
+				}
+				value := points[index]
+				height := int((value / 100.0) * float64(h))
+				if y > h-height {
+					return color.NRGBA{R: 100, G: 180, B: 255, A: 255}
+				}
+				return color.NRGBA{R: 230, G: 230, B: 230, A: 255}
+			})
+			graphContainer.Objects = []fyne.CanvasObject{graphCanvas}
+			graphContainer.Refresh()
+
+			time.Sleep(1 * time.Second)
+		}
+	}()
+
+	content := container.NewVBox(
+		widget.NewLabelWithStyle("Mock GPIO Log", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+		btnMouse,
+		btnKeyboard,
+		logList,
+		widget.NewLabelWithStyle("Grafik Nilai Acak", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+		graphContainer,
+	)
+
+	w.SetContent(content)
+	w.ShowAndRun()
 }
+
+var logs []string
