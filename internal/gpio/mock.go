@@ -1,14 +1,13 @@
 package gpio
 
-import "fmt"
-
 type MockPin struct {
 	State bool
 	Name  string
+	Logs  chan string
 }
 
-func NewMockPin(name string) *MockPin {
-	return &MockPin{Name: name}
+func NewMockPin(name string, logs chan string) *MockPin {
+	return &MockPin{Name: name, Logs: logs}
 }
 
 func (p *MockPin) Read() bool {
@@ -17,6 +16,15 @@ func (p *MockPin) Read() bool {
 
 func (p *MockPin) Write(value bool) error {
 	p.State = value
-	fmt.Printf("[MOCK] %s set to %v\n", p.Name, value)
+	if p.Logs != nil {
+		p.Logs <- "[MOCK] " + p.Name + " set to " + boolToText(value)
+	}
 	return nil
+}
+
+func boolToText(v bool) string {
+	if v {
+		return "ON"
+	}
+	return "OFF"
 }

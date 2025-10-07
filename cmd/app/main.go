@@ -127,27 +127,29 @@ package main
 import (
 	"runtime"
 
-	"goecbtest/internal/gpio"
-	"goecbtest/internal/services"
-	"goecbtest/internal/view"
+	"ecb-system/internal/gpio"
+	"ecb-system/internal/services"
+	"ecb-system/internal/ui"
 )
 
 func main() {
+	breaker := services.NewBreaker(nil, nil)
+
 	var sensorPin gpio.Pin
 	var relayPin gpio.Pin
 
 	if runtime.GOOS == "windows" {
-		sensorPin = gpio.NewMockPin("SENSOR")
-		relayPin = gpio.NewMockPin("RELAY")
-	} 
-	// else {
-	// 	sensorPin = gpio.NewRealPin("GPIO17")
-	// 	relayPin = gpio.NewRealPin("GPIO27")
-	// }
+		sensorPin = gpio.NewMockPin("SENSOR", breaker.Logs)
+		relayPin = gpio.NewMockPin("RELAY", breaker.Logs)
+	} else {
+		sensorPin = gpio.NewRealPin("GPIO17")
+		relayPin = gpio.NewRealPin("GPIO27")
+	}
 
-	breaker := services.NewBreaker(sensorPin, relayPin)
+	breaker.Sensor = sensorPin
+	breaker.Relay = relayPin
 
-	go breaker.Monitor() // jalan di background
+	go breaker.Monitor()
 
-	view.StartUI(breaker)
+	ui.StartUI(breaker)
 }
