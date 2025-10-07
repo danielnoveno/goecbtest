@@ -1,11 +1,12 @@
-package ui
+package view
 
 import (
+	"goecbtest/internal/services"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
-	"ecb-system/internal/services"
 )
 
 func StartUI(service *services.BreakerService) {
