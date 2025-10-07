@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"ecb-system/internal/services"
+	"goecbtest/internal/services"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -17,6 +17,9 @@ func StartUI(service *services.BreakerService) {
 	a := app.New()
 	w := a.NewWindow("ECB System")
 
+	r, _ := fyne.LoadResourceFromPath("E:/Magang - Noveno/goecbtest_3/goecbtest/assets/images/cat.png")
+    w.SetIcon(r)
+
 	statusLabel := widget.NewLabelWithStyle(
 		"Status: ✅ Normal",
 		fyne.TextAlignCenter,
@@ -25,12 +28,12 @@ func StartUI(service *services.BreakerService) {
 
 	// Area log besar + scrollable
 	logsView := widget.NewMultiLineEntry()
-	logsView.SetReadOnly(true)
+	// logsView.Disable()
 	logsView.Wrapping = fyne.TextWrapWord
 	logsView.SetText("System started...\n")
 
 	scroll := container.NewVScroll(logsView)
-	scroll.SetMinSize(fyne.NewSize(550, 280)) // lebih besar dari sebelumnya
+	scroll.SetMinSize(fyne.NewSize(600, 150)) // lebih besar dari sebelumnya
 
 	btnTestLeak := widget.NewButton("⚡ Simulate Leak", func() {
 		service.Sensor.Write(true)
@@ -53,13 +56,13 @@ func StartUI(service *services.BreakerService) {
 	mouseArea.Hide()
 
 	w.Canvas().SetOnTypedKey(func(k *fyne.KeyEvent) {
-		service.Logs <- "[USER] Keyboard key pressed: " + k.Name
+		service.Logs <- "[USER] Keyboard key pressed: " + string(k.Name)
 	})
 
-	w.Canvas().SetOnMouseDown(func(e *fyne.MouseEvent) {
-		service.Logs <- "[USER] Mouse clicked at (" + 
-			formatFloat(e.Position.X) + ", " + formatFloat(e.Position.Y) + ")"
-	})
+	// w.Canvas().SetOnMouseDown(func(e *fyne.MouseEvent) {
+	// 	service.Logs <- "[USER] Mouse clicked at (" + 
+	// 		formatFloat(e.Position.X) + ", " + formatFloat(e.Position.Y) + ")"
+	// })
 
 	layout := container.NewVBox(
 		widget.NewLabelWithStyle(
