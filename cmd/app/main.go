@@ -17,7 +17,7 @@
 // 	a := app.New()
 // 	w := a.NewWindow("ECB Test Application")
 // 	w.Resize(fyne.NewSize(400,300))
-	
+
 // 	r, _ := LoadResourceFromPath("E:/Magang - Noveno/goecbtest_3/goecbtest/assets/images/cat.png")
 //     w.SetIcon(r)
 
@@ -28,7 +28,7 @@
 
 // 	// w.SetContent(widget.NewLabel("This is a test application for ECB."))
 // 	// labelX := widget.NewLabel("This is a test application for ECB.")
-	
+
 // 	// btn := widget.NewButton("button name", func() {
 // 	// 	fmt.Println("Button clicked!")
 // 	// })
@@ -127,9 +127,9 @@ package main
 import (
 	"runtime"
 
-	"ecb-system/internal/gpio"
-	"ecb-system/internal/services"
-	"ecb-system/internal/ui"
+	"goecbtest/internal/gpio"
+	"goecbtest/internal/services"
+	"goecbtest/internal/view"
 )
 
 func main() {
@@ -139,14 +139,15 @@ func main() {
 	if runtime.GOOS == "windows" {
 		sensorPin = gpio.NewMockPin("SENSOR")
 		relayPin = gpio.NewMockPin("RELAY")
-	} else {
-		sensorPin = gpio.NewRealPin("GPIO17")
-		relayPin = gpio.NewRealPin("GPIO27")
-	}
+	} 
+	// else {
+	// 	sensorPin = gpio.NewRealPin("GPIO17")
+	// 	relayPin = gpio.NewRealPin("GPIO27")
+	// }
 
 	breaker := services.NewBreaker(sensorPin, relayPin)
 
 	go breaker.Monitor() // jalan di background
 
-	ui.StartUI(breaker)
+	view.StartUI(breaker)
 }
